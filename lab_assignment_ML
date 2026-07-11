@@ -1,0 +1,89 @@
+//QUESTION 1
+list1=[2,7,4,1,3,6]
+n=0
+trt=10
+for i in range(len(list1)):
+    a=list1[i]
+    for j in range(i+1,len(list1)):
+        if list1[j]+a==trt:
+            n+=1
+print("there are" + str(n) + "pairs")
+            
+ //QUESTION 2
+ n=int(input("enter the no of elements in the list"))
+if n<3:
+    print("Range determination not possible")
+else:
+    list1=[]
+    for i in range(n):
+        num=input("enter the number")
+        list1.append(num)
+    x=max(list1)
+    print("the range is " + str(x))
+
+//QUESTION 3
+n=int(input("enter the size of square matrix"))
+m=int(input("enter a number"))
+mat=[]
+for i in range(n):
+    rw=[]
+    for j in range(n):
+        elem=int(input(f"Enter element [{i}][{j}]:"))
+        rw.append(elem)
+    mat.append(rw)
+
+//QUESTION 4
+words=str(input("enter the word"))
+lst=[]
+for word in words:
+    lst.append(word.lower())
+a=set(lst)
+max1=0
+mode=[]
+for char in a:
+    count=lst.count(char)
+    if count>max1:
+        max1=count
+        mode=[char]
+    elif count==max1:
+        mode.append(char)
+if len(mode)==1:
+    print(f"The maximally occurring character is '{mode[0]}' & occurrence count is {max1}")
+else:
+    print(f"The maximally occurring characters are {mode} & occurrence count is {max1}")
+    
+    
+//QUESTION 5
+import random
+lst=[]
+x=25
+for i in range(25):
+    num=random.randint(1,10)
+    lst.append(num)
+lst.sort()
+mean=0
+median=0
+sum=0
+for i in  range(25):
+    sum=sum+lst[i]
+mean=sum/25
+if x%2!=0:
+    median=lst[(x//2)]
+else:
+    median=(lst[(x//2)-1]+lst[(x//2)])/2
+a=set(lst)
+max1=0
+mode=[]
+
+for num in a:
+    count=lst.count(num)
+    if count>max1:
+        max1=count
+        mode=[num]
+    elif count==max1:
+        mode.append(num)
+print(lst)
+print("the mean is " + str(mean))
+print("The median is "+ str(median))
+print(mode)
+    
