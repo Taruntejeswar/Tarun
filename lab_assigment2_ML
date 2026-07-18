@@ -12,3 +12,22 @@ prod=df1.to_numpy()
 print(prod)
 c=numpy.linalg.pinv(mat)@prod
 print(c)
+//Q3
+import numpy
+import pandas
+fp=r'C:\Users\tarun\AppData\Local\Programs\Python\Python313\Data.xlsx'
+df=pandas.read_excel(fp, sheet_name=1,usecols=['Price'])
+mat=df.to_numpy()
+print(mat)
+mean=numpy.mean(mat)
+print(mean)
+var=numpy.var(mat)
+print(var)
+sum=0
+vari=0
+for i in range(len(mat)):
+    sum=sum+mat[i]
+mean1=sum/len(mat)
+for i in range(len(mat)):
+    vari=vari+(mat[i])**2
+variance=(vari/len(mat))-(mean1)**2
