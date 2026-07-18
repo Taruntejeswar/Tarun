@@ -1,0 +1,14 @@
+//Q1
+import numpy
+import pandas
+fp=r'C:\Users\tarun\AppData\Local\Programs\Python\Python313\Data.xlsx'
+df=pandas.read_excel(fp, sheet_name=0,usecols=['Candies (#)','Mangoes (Kg)','Milk Packets (#)'])
+mat=df.to_numpy()
+print(mat)
+b=numpy.linalg.matrix_rank(mat)
+print(b)
+df1=pandas.read_excel(fp ,sheet_name=0,usecols=['Payment (Rs)'])
+prod=df1.to_numpy()
+print(prod)
+c=numpy.linalg.pinv(mat)@prod
+print(c)
