@@ -12,6 +12,12 @@ prod=df1.to_numpy()
 print(prod)
 c=numpy.linalg.pinv(mat)@prod
 print(c)
+//Q2
+for row in data:
+    row.append("RICH" if row[3] > 200 else "POOR")
+print("Customer data with labels:")
+for row in data:
+    print(row)
 //Q3
 import numpy
 import pandas
