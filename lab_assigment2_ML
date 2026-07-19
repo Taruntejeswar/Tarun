@@ -31,3 +31,12 @@ mean1=sum/len(mat)
 for i in range(len(mat)):
     vari=vari+(mat[i])**2
 variance=(vari/len(mat))-(mean1)**2
+//Q4
+fp = r'C:\Users\tarun\AppData\Local\Programs\Python\Python313\Data.xlsx'
+df = pd.read_excel(fp, sheet_name='thyroid0387_UCI')
+for col in df.columns:
+    dtype = df[col].dtype
+    cat = "NUMERIC" 
+    if dtype in ['int64','float64']
+    else "CATEGORICAL"
+    print(f"{col}: {cat} ({dtype})")
