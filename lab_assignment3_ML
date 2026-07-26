@@ -1,0 +1,104 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.spatial.distance import minkowski
+
+df = pd.read_csv("marketing_campaign.csv")
+
+//Q1
+def identify_datatypes(df):
+    datatype_dict = {}
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            if col in ['Education', 'Marital_Status']:
+                datatype_dict[col] = 'Ordinal'
+            else:
+                datatype_dict[col] = 'Nominal'
+        else:
+            if col in ['Income', 'Kidhome', 'Teenhome', 'Age', 'Recency', 
+                       'MntWines', 'MntFruits', 'MntMeatProducts', 'MntFishProducts',
+                       'MntSweetProducts', 'MntGoldProds', 'NumDealsPurchases',
+                       'NumWebPurchases', 'NumCatalogPurchases', 'NumStorePurchases',
+                       'NumWebVisitsMonth', 'Response', 'Complain']:
+                datatype_dict[col] = 'Ratio'
+            else:
+                datatype_dict[col] = 'Interval'
+    return datatype_dict
+
+datatypes = identify_datatypes(df)
+print("A1 - Feature Datatypes:")
+for col in datatypes:
+    print(col, ":", datatypes[col])
+print("\n")
+
+//Q2
+def label_encoding(series):
+    unique_vals = []
+    for val in series:
+        if val not in unique_vals:
+            unique_vals.append(val)
+    unique_vals.sort()
+    encoded = []
+    for val in series:
+        for i in range(len(unique_vals)):
+            if val == unique_vals[i]:
+                encoded.append(i)
+                break
+    return encoded, unique_vals
+
+#A2 - One-Hot Encoding function
+def one_hot_encoding(series):
+    unique_vals = []
+    for val in series:
+        if val not in unique_vals:
+            unique_vals.append(val)
+    unique_vals.sort()
+    one_hot_matrix = []
+    for val in series:
+        row = []
+        for i in range(len(unique_vals)):
+            if val == unique_vals[i]:
+                row.append(1)
+            else:
+                row.append(0)
+        one_hot_matrix.append(row)
+    return one_hot_matrix, unique_vals
+
+//Q3
+categorical_cols = ['Education', 'Marital_Status']
+df_encoded = df.copy()
+
+print("A3 - Encoding Results:")
+for col in categorical_cols:
+    label_encoded, label_mapping = label_encoding(df[col])
+    df_encoded[col + '_Label'] = label_encoded
+    print(col, "Label Encoding mapping:", label_mapping)
+    
+    one_hot_encoded, one_hot_vals = one_hot_encoding(df[col])
+    for i in range(len(one_hot_vals)):
+        col_name = col + '_' + one_hot_vals[i]
+        col_values = []
+        for row in one_hot_encoded:
+            col_values.append(row[i])
+        df_encoded[col_name] = col_values
+    print(col, "One-Hot Encoding created", len(one_hot_vals), "new columns")
+
+print("Original dataset shape:", df.shape)
+print("After encoding shape:", df_encoded.shape)
+print("Feature dimensionality increased by:", df_encoded.shape[1] - df.shape[1])
+print("\n")
+
+//Q4
+def minkowski_distance(vector1, vector2, p):
+    if len(vector1) != len(vector2):
+        return None
+    sum_diff = 0
+    for i in range(len(vector1)):
+        diff = abs(vector1[i] - vector2[i])
+        sum_diff = sum_diff + (diff ** p)
+    if p == 1:
+        return sum_diff
+    elif p == 2:
+        return sum_diff ** 0.5
+    else:
+        return sum_diff ** (1/p)
