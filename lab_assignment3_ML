@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import scipy.spatial.distance
 from pathlib import Path
 
 fp = Path(r'C:\Users\tarun\AppData\Local\Programs\Python\Python313\Data.xlsx')
@@ -29,6 +28,7 @@ def compare_minkowski(point1, point2):
         mink_distance = minkowski_distance(point1, point2, p)
         comparison.append({"p": p, "My Distance": mink_distance})
     return comparison
+
 def dot_product(vector1, vector2):
     if len(vector1) != len(vector2):
         raise ValueError("Vectors must have the same dimensions.")
@@ -90,10 +90,10 @@ def numpy_statistics(feat_vecs):
     std_vector = feat_vecs.std(axis=0)
     return mean_vector, std_vector
 
-print("Minkowski Distances (p = 1 to 10):")
+print("\nMinkowski Distances (p = 1 to 10):")
 print(distance(vector1, vector2))
 
-print("\nComparison with scipy.spatial.distance.minkowski():")
+print("\nDetailed Comparison:")
 for row in compare_minkowski(vector1, vector2):
     print(row)
 
