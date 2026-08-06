@@ -27,10 +27,8 @@ def compare_minkowski(point1, point2):
     comparison = []
     for p in range(1, 11):
         mink_distance = minkowski_distance(point1, point2, p)
-        scipy_distance = scipy.spatial.distance.minkowski(point1, point2, p)
-        comparison.append({"p": p,"My Distance": mink_distance,"Scipy Distance": scipy_distance,"Difference": abs(mink_distance - scipy_distance)})
+        comparison.append({"p": p, "My Distance": mink_distance})
     return comparison
-
 def dot_product(vector1, vector2):
     if len(vector1) != len(vector2):
         raise ValueError("Vectors must have the same dimensions.")
