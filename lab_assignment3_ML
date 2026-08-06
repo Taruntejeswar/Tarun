@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import scipy.spatial.distance
 
-df=pd.read_excel(r'C:\Users\raghu\Documents\ML lab\Lab Session Data (1).xlsx', sheet_name=3)
+df=pd.read_excel(r'Lab Session Data (1).xlsx', sheet_name=3)
 feat_vecs = df.select_dtypes(include=[np.number]).to_numpy()
 vector1 = feat_vecs[0]
 vector2 = feat_vecs[1]
