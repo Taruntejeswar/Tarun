@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
 import scipy.spatial.distance
-fp=r'C:\Users\tarun\AppData\Local\Programs\Python\Python313\Data.xlsx'
-df=pd.read_excel(fp, sheet_name=3)
+from pathlib import Path
+
+fp = Path(r'C:\Users\tarun\AppData\Local\Programs\Python\Python313\Data.xlsx')
+df = pd.read_excel(fp, sheet_name=3)
 feat_vecs = df.select_dtypes(include=[np.number]).to_numpy()
 vector1 = feat_vecs[0]
 vector2 = feat_vecs[1]
@@ -79,7 +81,6 @@ def dataset_statistics(matrix):
         mean_vector.append(mean(column))
         variance_vector.append(variance(column))
         std_vector.append(std(column))
-
     return (
         np.array(mean_vector),
         np.array(variance_vector),
