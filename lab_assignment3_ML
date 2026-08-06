@@ -1,104 +1,120 @@
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy.spatial.distance import minkowski
+import numpy as np
+import scipy.spatial.distance
 
-df = pd.read_csv("marketing_campaign.csv")
+df=pd.read_excel(r'C:\Users\raghu\Documents\ML lab\Lab Session Data (1).xlsx', sheet_name=3)
+feat_vecs = df.select_dtypes(include=[np.number]).to_numpy()
+vector1 = feat_vecs[0]
+vector2 = feat_vecs[1]
 
-//Q1
-def identify_datatypes(df):
-    datatype_dict = {}
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            if col in ['Education', 'Marital_Status']:
-                datatype_dict[col] = 'Ordinal'
-            else:
-                datatype_dict[col] = 'Nominal'
-        else:
-            if col in ['Income', 'Kidhome', 'Teenhome', 'Age', 'Recency', 
-                       'MntWines', 'MntFruits', 'MntMeatProducts', 'MntFishProducts',
-                       'MntSweetProducts', 'MntGoldProds', 'NumDealsPurchases',
-                       'NumWebPurchases', 'NumCatalogPurchases', 'NumStorePurchases',
-                       'NumWebVisitsMonth', 'Response', 'Complain']:
-                datatype_dict[col] = 'Ratio'
-            else:
-                datatype_dict[col] = 'Interval'
-    return datatype_dict
+def minkowski_distance(point1, point2, p):
+    if len(point1) != len(point2):
+        raise ValueError("Feature vectors must have the same length.")
+    distance = 0
+    for x, y in zip(point1, point2):
+        distance += abs(x - y) ** p
+    return distance ** (1 / p)
 
-datatypes = identify_datatypes(df)
-print("A1 - Feature Datatypes:")
-for col in datatypes:
-    print(col, ":", datatypes[col])
-print("\n")
+def distance(point1, point2):
+    distances = []
+    for p in range(1, 11):
+        distances.append(minkowski_distance(point1, point2, p))
+    return distances
 
-//Q2
-def label_encoding(series):
-    unique_vals = []
-    for val in series:
-        if val not in unique_vals:
-            unique_vals.append(val)
-    unique_vals.sort()
-    encoded = []
-    for val in series:
-        for i in range(len(unique_vals)):
-            if val == unique_vals[i]:
-                encoded.append(i)
-                break
-    return encoded, unique_vals
+def compare_minkowski(point1, point2):
+    comparison = []
+    for p in range(1, 11):
+        mink_distance = minkowski_distance(point1, point2, p)
+        scipy_distance = scipy.spatial.distance.minkowski(point1, point2, p)
+        comparison.append({"p": p,"My Distance": mink_distance,"Scipy Distance": scipy_distance,"Difference": abs(mink_distance - scipy_distance)})
+    return comparison
 
-#A2 - One-Hot Encoding function
-def one_hot_encoding(series):
-    unique_vals = []
-    for val in series:
-        if val not in unique_vals:
-            unique_vals.append(val)
-    unique_vals.sort()
-    one_hot_matrix = []
-    for val in series:
-        row = []
-        for i in range(len(unique_vals)):
-            if val == unique_vals[i]:
-                row.append(1)
-            else:
-                row.append(0)
-        one_hot_matrix.append(row)
-    return one_hot_matrix, unique_vals
-
-//Q3
-categorical_cols = ['Education', 'Marital_Status']
-df_encoded = df.copy()
-
-print("A3 - Encoding Results:")
-for col in categorical_cols:
-    label_encoded, label_mapping = label_encoding(df[col])
-    df_encoded[col + '_Label'] = label_encoded
-    print(col, "Label Encoding mapping:", label_mapping)
-    
-    one_hot_encoded, one_hot_vals = one_hot_encoding(df[col])
-    for i in range(len(one_hot_vals)):
-        col_name = col + '_' + one_hot_vals[i]
-        col_values = []
-        for row in one_hot_encoded:
-            col_values.append(row[i])
-        df_encoded[col_name] = col_values
-    print(col, "One-Hot Encoding created", len(one_hot_vals), "new columns")
-
-print("Original dataset shape:", df.shape)
-print("After encoding shape:", df_encoded.shape)
-print("Feature dimensionality increased by:", df_encoded.shape[1] - df.shape[1])
-print("\n")
-
-//Q4
-def minkowski_distance(vector1, vector2, p):
+def dot_product(vector1, vector2):
     if len(vector1) != len(vector2):
-        return None
-    sum_diff = 0
-    for i in range(len(vector1)):
-        diff = abs(vector1[i] - vector2[i])
-        sum_diff = sum_diff + (diff ** p)
-    if p == 1:
-        return sum_diff
-    elif p == 2:
-        return sum_diff ** 0.5
-    else:
-        return sum_diff ** (1/p)
+        raise ValueError("Vectors must have the same dimensions.")
+    result = 0
+    for x, y in zip(vector1, vector2):
+        result += x * y
+    return result
+
+def euclidean_norm(vector):
+    sum_= 0
+    for value in vector:
+        sum_ += value ** 2
+    return sum_ ** 0.5
+
+def compare_vectors(vector1, vector2):
+    results = {
+        "User Dot Product": dot_product(vector1, vector2),
+        "NumPy Dot Product": np.dot(vector1, vector2),
+        "User Norm (A)": euclidean_norm(vector1),
+        "NumPy Norm (A)": np.linalg.norm(vector1),
+        "User Norm (B)": euclidean_norm(vector2),
+        "NumPy Norm (B)": np.linalg.norm(vector2)
+    }
+    return results
+
+def mean(data):
+    total = 0
+    for value in data:
+        total += value
+    return total / len(data)
+
+def variance(data):
+    avg = mean(data)
+    variance = 0
+    for value in data:
+        variance += (value - avg) ** 2
+    return variance / len(data)
+
+def std(data):
+    return variance(data) ** 0.5
+
+def dataset_statistics(matrix):
+    mean_vector = []
+    variance_vector = []
+    std_vector = []
+    for i in range(matrix.shape[1]):
+        column = matrix[:, i]
+        mean_vector.append(mean(column))
+        variance_vector.append(variance(column))
+        std_vector.append(std(column))
+
+    return (
+        np.array(mean_vector),
+        np.array(variance_vector),
+        np.array(std_vector)
+    )
+
+def numpy_statistics(feat_vecs):
+    mean_vector = feat_vecs.mean(axis=0)
+    std_vector = feat_vecs.std(axis=0)
+    return mean_vector, std_vector
+
+print("Minkowski Distances (p = 1 to 10):")
+print(distance(vector1, vector2))
+
+print("\nComparison with scipy.spatial.distance.minkowski():")
+for row in compare_minkowski(vector1, vector2):
+    print(row)
+
+print("\nDot Product and Euclidean Norm:")
+results = compare_vectors(vector1, vector2)
+for key, value in results.items():
+    print(f"{key}: {value}")
+
+print("\nDataset Statistics (User-defined):")
+mean_vector, variance_vector, std_vector = dataset_statistics(feat_vecs)
+print("Mean Vector:")
+print(mean_vector)
+print("\nVariance Vector:")
+print(variance_vector)
+print("\nStandard Deviation Vector:")
+print(std_vector)
+
+print("\nNumPy Statistics:")
+numpy_mean_vector, numpy_std_vector = numpy_statistics(feat_vecs)
+print("Mean Vector:")
+print(numpy_mean_vector)
+print("\nStandard Deviation Vector:")
+print(numpy_std_vector)
