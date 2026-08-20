@@ -1,46 +1,150 @@
+import numpy as np
+import pandas as pd
+import cv2
+import os
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
+from collections import Counter
+import warnings
+warnings.filterwarnings('ignore')
 
-def calculate_distance(x1,x2,metric='euclidean'):
-    x1,x2=np.array(x1),np.array(x2)
-    if metric=='euclidean':
-        return np.sqrt(np.sum((x1-x2)**2))
-    elif metric=='manhattan':
-        return np.sum(np.abs(x1-x2))
-    else:
-        return np.sqrt(np.sum((x1-x2)**2))
+def extract_features(image_path):
+    img=cv2.imread(image_path)
+    if img is None: return None
+    img=cv2.resize(img,(128,128))
+    gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    lab=cv2.cvtColor(img,cv2.COLOR_BGR2LAB)
+    features=[]
+    for i in range(3):
+        features.extend(cv2.calcHist([img],[i],None,[32],[0,256]).flatten())
+    for i in range(3):
+        features.extend([np.mean(hsv[:,:,i]),np.std(hsv[:,:,i]),np.median(hsv[:,:,i])])
+    for i in range(3):
+        features.extend([np.mean(lab[:,:,i]),np.std(lab[:,:,i])])
+    features.extend([np.mean(gray),np.std(gray),np.median(gray),np.min(gray),np.max(gray)])
+    edges=cv2.Canny(gray,50,150)
+    features.extend([np.mean(edges),np.std(edges),np.sum(edges>0)/(edges.shape[0]*edges.shape[1])])
+    return np.array(features)
 
-def bubble_sort(arr):
-    n=len(arr)
-    for i in range(n):
-        for j in range(0,n-i-1):
-            if arr[j][0]>arr[j+1][0]:
-                arr[j],arr[j+1]=arr[j+1],arr[j]
-    return arr
+def knn_predict(X_train,y_train,X_test,k=3):
+    predictions=[]
+    for test_point in X_test:
+        distances=[]
+        for i,train_point in enumerate(X_train):
+            distances.append((np.sqrt(np.sum((test_point-train_point)**2)),i))
+        distances.sort()
+        neighbors=distances[:k]
+        labels=[y_train[idx] for _,idx in neighbors]
+        dists=[d for d,_ in neighbors]
+        counter=Counter(labels)
+        max_count=max(counter.values())
+        candidates=[label for label,count in counter.items() if count==max_count]
+        if len(candidates)==1:
+            predictions.append(candidates[0])
+        else:
+            min_dist=float('inf')
+            chosen=candidates[0]
+            for label in candidates:
+                for i,lbl in enumerate(labels):
+                    if lbl==label and dists[i]<min_dist:
+                        min_dist=dists[i]
+                        chosen=label
+            predictions.append(chosen)
+    return np.array(predictions)
 
-def quick_sort(arr):
-    if len(arr)<=1:
-        return arr
-    pivot=arr[len(arr)//2][0]
-    left=[x for x in arr if x[0]<pivot]
-    middle=[x for x in arr if x[0]==pivot]
-    right=[x for x in arr if x[0]>pivot]
-    return quick_sort(left)+middle+quick_sort(right)
+def weighted_knn_predict(X_train,y_train,X_test,k=3):
+    predictions=[]
+    for test_point in X_test:
+        distances=[]
+        for i,train_point in enumerate(X_train):
+            distances.append((np.sqrt(np.sum((test_point-train_point)**2)),i))
+        distances.sort()
+        neighbors=distances[:k]
+        labels=[y_train[idx] for _,idx in neighbors]
+        dists=[d for d,_ in neighbors]
+        weights={}
+        for label,dist in zip(labels,dists):
+            weights[label]=weights.get(label,0)+1/(dist+1e-10)
+        max_weight=max(weights.values())
+        candidates=[label for label,w in weights.items() if w==max_weight]
+        if len(candidates)==1:
+            predictions.append(candidates[0])
+        else:
+            min_dist=float('inf')
+            chosen=candidates[0]
+            for label in candidates:
+                for i,lbl in enumerate(labels):
+                    if lbl==label and dists[i]<min_dist:
+                        min_dist=dists[i]
+                        chosen=label
+            predictions.append(chosen)
+    return np.array(predictions)
 
-def insertion_sort(arr):
-    for i in range(1,len(arr)):
-        key=arr[i]
-        j=i-1
-        while j>=0 and arr[j][0]>key[0]:
-            arr[j+1]=arr[j]
-            j-=1
-        arr[j+1]=key
-    return arr
+def load_data():
+    base="C:/Users/tarun/Downloads/B. Disease Grading/B. Disease Grading/"
+    train=pd.read_csv(os.path.join(base,"2. Groundtruths/a. IDRiD_Disease Grading_Training Labels.csv"))
+    test=pd.read_csv(os.path.join(base,"2. Groundtruths/b. IDRiD_Disease Grading_Testing Labels.csv"))
+    data=pd.concat([train,test],ignore_index=True)
+    y=data['Retinopathy grade'].values
+    mask=(y==0)|(y==4)
+    data=data[mask].reset_index(drop=True)
+    y=np.where(data['Retinopathy grade'].values==4,1,0)
+    features=[]; labels=[]
+    for idx,row in data.iterrows():
+        path=os.path.join(base,"1. Original Images/a. Training Set",f"{row['Image name']}.jpg")
+        if not os.path.exists(path):
+            path=os.path.join(base,"1. Original Images/b. Testing Set",f"{row['Image name']}.jpg")
+        if os.path.exists(path):
+            feat=extract_features(path)
+            if feat is not None:
+                features.append(feat); labels.append(y[idx])
+    return np.array(features),np.array(labels)
 
-def sort_distances(distances,algorithm='quick'):
-    if algorithm=='bubble':
-        return bubble_sort(distances)
-    elif algorithm=='quick':
-        return quick_sort(distances)
-    elif algorithm=='insertion':
-        return insertion_sort(distances)
-    else:
-        return quick_sort(distances)
+def main():
+    X,y=load_data()
+    X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=42,stratify=y)
+    scaler=StandardScaler()
+    X_train=scaler.fit_transform(X_train)
+    X_test=scaler.transform(X_test)
+    k_values=[1,3,5,7,9,11,15,20]
+    custom=[]; weighted=[]; sklearn=[]; train_acc=[]; test_acc=[]
+    print("k\tCustom\tWeighted\tSklearn")
+    for k in k_values:
+        custom.append(accuracy_score(y_test,knn_predict(X_train,y_train,X_test,k)))
+        weighted.append(accuracy_score(y_test,weighted_knn_predict(X_train,y_train,X_test,k)))
+        sk=KNeighborsClassifier(n_neighbors=k).fit(X_train,y_train)
+        sklearn.append(sk.score(X_test,y_test))
+        print(f"{k}\t{custom[-1]:.4f}\t{weighted[-1]:.4f}\t\t{sklearn[-1]:.4f}")
+    best_k=k_values[np.argmax(custom)]
+    print(f"\nBest k: {best_k} with accuracy: {max(custom):.4f}")
+    print("\nTraining vs Testing:")
+    print("k\tTrain\tTest\tGap")
+    for k in k_values:
+        train=accuracy_score(y_train,knn_predict(X_train,y_train,X_train,k))
+        test=accuracy_score(y_test,knn_predict(X_train,y_train,X_test,k))
+        train_acc.append(train); test_acc.append(test)
+        print(f"{k}\t{train:.4f}\t{test:.4f}\t{train-test:.4f}")
+    plt.figure(figsize=(12,5))
+    plt.subplot(1,2,1)
+    plt.plot(k_values,custom,'b-o',label='Custom')
+    plt.plot(k_values,weighted,'r-s',label='Weighted')
+    plt.plot(k_values,sklearn,'g-^',label='Sklearn')
+    plt.xlabel('k'); plt.ylabel('Accuracy'); plt.title('Accuracy Comparison'); plt.legend(); plt.grid(True)
+    plt.subplot(1,2,2)
+    plt.plot(k_values,train_acc,'b-o',label='Train')
+    plt.plot(k_values,test_acc,'r-s',label='Test')
+    plt.xlabel('k'); plt.ylabel('Accuracy'); plt.title('Train vs Test'); plt.legend(); plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    print("\nOverfitting Analysis:")
+    best_idx=k_values.index(best_k)
+    gap=train_acc[best_idx]-test_acc[best_idx]
+    print(f"k={best_k}: Train={train_acc[best_idx]:.4f}, Test={test_acc[best_idx]:.4f}, Gap={gap:.4f}")
+    print("OVERFITTING" if gap>0.10 else ("MODERATE OVERFITTING" if gap>0.05 else ("REGULAR FIT" if gap<0.02 else "MILD OVERFITTING")))
+
+if __name__=="__main__":
+    main()
